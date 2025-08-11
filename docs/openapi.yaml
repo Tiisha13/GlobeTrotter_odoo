@@ -1,0 +1,884 @@
+openapi: 3.0.3
+info:
+  title: GlobeTrotter API
+  description: |
+    A production-ready, horizontally scalable backend for the GlobeTrotter travel planning system.
+
+    ## Features
+    - JWT-based authentication with access tokens
+    - User management with profile customization
+    - Trip planning and sharing capabilities
+    - File upload for user avatars
+    - Rate limiting and security middleware
+    - Comprehensive error handling
+
+    ## Authentication
+    This API uses JWT Bearer tokens for authentication. Include the token in the Authorization header:
+      Authorization: Bearer <your_access_token>
+  version: 1.0.0
+  contact:
+    name: GlobeTrotter Development Team
+    email: dev@globetrotter.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: https://api.globetrotter.com/api/v1
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/signup:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account with email and password authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignupRequest"
+            example:
+              name: "John Doe"
+              email: "john@example.com"
+              password: "securepassword123"
+      responses:
+        "201":
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthResponse"
+              example:
+                success: true
+                message: "User created successfully"
+                data:
+                  access_token: "eyJhbGciOiJIUzI1NiIs..."
+                  refresh_token: "eyJhbGciOiJIUzI1NiIs..."
+                  user:
+                    id: "507f1f77bcf86cd799439011"
+                    name: "John Doe"
+                    email: "john@example.com"
+                    avatar_path: ""
+                    preferences:
+                      language: "en"
+                      currency: "USD"
+                      theme: "light"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user
+      description: Authenticates a user with email and password, returns JWT tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              email: "john@example.com"
+              password: "securepassword123"
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user profile
+      description: Retrieves the profile information of the authenticated user
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - Users
+      summary: Update current user profile
+      description: Updates the profile information of the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+            example:
+              name: "John Smith"
+              preferences:
+                language: "es"
+                currency: "EUR"
+                theme: "dark"
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Users
+      summary: Delete current user account
+      description: Permanently deletes the authenticated user's account
+      responses:
+        "200":
+          description: Account deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/avatar:
+    post:
+      tags:
+        - Users
+      summary: Upload user avatar
+      description: Uploads a profile picture for the authenticated user
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, GIF, max 5MB)
+      responses:
+        "200":
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          avatar_path:
+                            type: string
+                            example: "/uploads/profile_pics/avatar_507f1f77bcf86cd799439011.jpg"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /trips/public:
+    get:
+      tags:
+        - Trips
+      summary: Get public trips
+      description: Retrieves a paginated list of publicly shared trips
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - name: sort
+          in: query
+          description: Sort order for trips
+          schema:
+            type: string
+            enum: [newest, oldest, popular]
+            default: newest
+      responses:
+        "200":
+          description: Public trips retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PaginatedResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /trips/share/{shareToken}:
+    get:
+      tags:
+        - Trips
+      summary: Get shared trip by token
+      description: Retrieves a trip using its public share token
+      security: []
+      parameters:
+        - name: shareToken
+          in: path
+          required: true
+          description: Unique share token for the trip
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Shared trip retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Trip"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /trips:
+    get:
+      tags:
+        - Trips
+      summary: Get user's trips
+      description: Retrieves a paginated list of trips owned by the authenticated user
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: User trips retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/PaginatedResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    post:
+      tags:
+        - Trips
+      summary: Create a new trip
+      description: Creates a new trip for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTripRequest"
+            example:
+              title: "Summer Vacation"
+              description: "Beach holiday in Thailand"
+              privacy: "private"
+              start_date: "2025-07-01T00:00:00Z"
+              end_date: "2025-07-14T00:00:00Z"
+      responses:
+        "201":
+          description: Trip created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Trip"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /trips/{id}:
+    get:
+      tags:
+        - Trips
+      summary: Get trip by ID
+      description: Retrieves a specific trip by its ID (must be owned by user)
+      parameters:
+        - $ref: "#/components/parameters/TripIdParam"
+      responses:
+        "200":
+          description: Trip retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Trip"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    put:
+      tags:
+        - Trips
+      summary: Update trip
+      description: Updates a specific trip (must be owned by user)
+      parameters:
+        - $ref: "#/components/parameters/TripIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTripRequest"
+      responses:
+        "200":
+          description: Trip updated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Trip"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Trips
+      summary: Delete trip
+      description: Deletes a specific trip (must be owned by user)
+      parameters:
+        - $ref: "#/components/parameters/TripIdParam"
+      responses:
+        "200":
+          description: Trip deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /trips/{id}/share:
+    post:
+      tags:
+        - Trips
+      summary: Share trip publicly
+      description: Creates a public share link for a trip
+      parameters:
+        - $ref: "#/components/parameters/TripIdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expires_in_hours:
+                  type: integer
+                  minimum: 1
+                  maximum: 8760
+                  default: 168
+                  description: Number of hours until share link expires (max 1 year)
+            example:
+              expires_in_hours: 168
+      responses:
+        "200":
+          description: Trip shared successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ShareResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /trips/{id}/duplicate:
+    post:
+      tags:
+        - Trips
+      summary: Duplicate trip
+      description: Creates a copy of an existing trip
+      parameters:
+        - $ref: "#/components/parameters/TripIdParam"
+      responses:
+        "201":
+          description: Trip duplicated successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/APIResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Trip"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the API
+      security: []
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  environment:
+                    type: string
+                    example: "development"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    PageParam:
+      name: page
+      in: query
+      description: Page number for pagination
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+
+    LimitParam:
+      name: limit
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+    TripIdParam:
+      name: id
+      in: path
+      required: true
+      description: MongoDB ObjectID of the trip
+      schema:
+        type: string
+        pattern: "^[0-9a-fA-F]{24}$"
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectID
+          example: "507f1f77bcf86cd799439011"
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        avatar_path:
+          type: string
+          example: "/uploads/profile_pics/avatar_123.jpg"
+        preferences:
+          $ref: "#/components/schemas/UserPreferences"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UserPreferences:
+      type: object
+      properties:
+        language:
+          type: string
+          example: "en"
+        currency:
+          type: string
+          example: "USD"
+        theme:
+          type: string
+          example: "light"
+
+    Trip:
+      type: object
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectID
+          example: "507f1f77bcf86cd799439012"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+          example: "European Adventure"
+        description:
+          type: string
+          maxLength: 1000
+          example: "10-day trip through Europe"
+        owner_id:
+          type: string
+          description: MongoDB ObjectID of the owner
+          example: "507f1f77bcf86cd799439011"
+        privacy:
+          type: string
+          enum: [private, public]
+          example: "public"
+        start_date:
+          type: string
+          format: date-time
+          example: "2025-09-01T00:00:00Z"
+        end_date:
+          type: string
+          format: date-time
+          example: "2025-09-10T00:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SignupRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        password:
+          type: string
+          minLength: 8
+          example: "securepassword123"
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        password:
+          type: string
+          example: "securepassword123"
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIs..."
+
+        user:
+          $ref: "#/components/schemas/User"
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+          maxLength: 100
+        preferences:
+          $ref: "#/components/schemas/UserPreferences"
+
+    CreateTripRequest:
+      type: object
+      required:
+        - title
+        - privacy
+        - start_date
+        - end_date
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        privacy:
+          type: string
+          enum: [private, public]
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+
+    UpdateTripRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        privacy:
+          type: string
+          enum: [private, public]
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+
+    ShareResponse:
+      type: object
+      properties:
+        share_token:
+          type: string
+          example: "abc123def456"
+        share_url:
+          type: string
+          example: "http://localhost:8080/api/v1/trips/share/abc123def456"
+        expires_at:
+          type: string
+          format: date-time
+          example: "2025-08-18T12:00:00Z"
+
+    APIResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+        error:
+          type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total_items:
+          type: integer
+          example: 150
+        total_pages:
+          type: integer
+          example: 8
+        has_next:
+          type: boolean
+          example: true
+        has_prev:
+          type: boolean
+          example: false
+        data:
+          type: array
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/Trip"
+              - $ref: "#/components/schemas/User"
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIResponse"
+          example:
+            success: false
+            error: "Invalid request data"
+
+    Unauthorized:
+      description: Unauthorized - authentication required or invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIResponse"
+          example:
+            success: false
+            error: "Authentication required"
+
+    Forbidden:
+      description: Forbidden - access denied
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIResponse"
+          example:
+            success: false
+            error: "Access denied"
+
+    NotFound:
+      description: Not found - resource does not exist
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIResponse"
+          example:
+            success: false
+            error: "Resource not found"
+
+    Conflict:
+      description: Conflict - resource already exists
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIResponse"
+          example:
+            success: false
+            error: "Email already exists"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/APIResponse"
+          example:
+            success: false
+            error: "Internal server error"
+
+tags:
+  - name: Authentication
+    description: User authentication and token management
+  - name: Users
+    description: User profile management
+  - name: Trips
+    description: Trip planning and management
+  - name: Health
+    description: Service health check
