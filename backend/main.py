@@ -8,9 +8,10 @@ import logging
 import os
 import json
 from datetime import datetime
-
-import os
 import sys
+
+# Import the new endpoints
+from backend.api.endpoints import trips, cities, conversations
 
 # Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -24,6 +25,7 @@ from backend.services.blacklist_service import BlacklistService, BlacklistType
 from backend.services.context_service import ContextService
 from backend.services.multimodal_service import MultiModalService, VoiceInput
 from backend.services.advanced_ai_service import AdvancedAIService
+from backend.repositories.city_repository import city_repository
 
 # Configure logging
 logging.basicConfig(level=logging.INFO if settings.DEBUG else logging.WARNING)
@@ -45,6 +47,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers for trips, cities, and conversations
+app.include_router(trips.router)
+app.include_router(cities.router)
+app.include_router(conversations.router)
 
 # Mount static files (optional)
 static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -437,6 +444,16 @@ async def root():
 async def on_startup():
     global conv_repo
     conv_repo = await ConversationRepository.create()
+    # Ensure DB indexes for cities are created on startup
+    try:
+        await city_repository.ensure_indexes()
+    except Exception as e:
+        logger.warning(f"Failed to ensure city indexes: {e}")
+    # Initialize async services
+    try:
+        await context_service.init()
+    except Exception as e:
+        logger.warning(f"Failed to initialize context service: {e}")
 
 @app.on_event("shutdown")
 async def on_shutdown():

@@ -1,40 +1,20 @@
+// Export types with 'export type' for isolatedModules
+export type { Activity } from './trip.types';
+export type { TripDay } from './trip.types';
+export type { BudgetItem } from './trip.types';
+export type { Trip } from './trip.types';
+export type { TripFormData } from './trip.types';
+export type { ActivitySearchResult } from './trip.types';
+export type { TripFilterOptions } from './trip.types';
+export type { IDayPlan } from './trip.types';
+export type { ITripContext } from './trip.types';
+
+// Export travel-related types
 export * from './travel';
 
-export interface IActivity {
-  id: string;
-  time: string;
-  name: string;
-  cost: number;
-  weather: string;
-  crowd?: number;
-  thumb?: string;
-};
-
-export interface IDayPlan {
-  id: string;
-  date: string;
-  city: string;
-  budget: number;
-  activities: Activity[];
-};
-
+// Chat message interface
 export interface IChatMessage { 
   id: string; 
   role: 'ai' | 'user'; 
   text: string;
-};
-
-export interface ITripContext {
-  destinations?: string[];
-  start_date?: string;
-  end_date?: string;
-  duration_days?: number;
-  budget_total?: number;
-  currency?: string;
-  travelers_adults?: number;
-  travelers_children?: number;
-  transport_pref?: 'train' | 'bus' | 'flight' | 'any' | 'not_sure';
-  accommodation?: string;
-  restrictions?: string[];
-  eco_mode?: boolean;
 };

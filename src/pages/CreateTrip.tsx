@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { generateId } from '@/lib/id';
 import { upsertTrip } from '@/lib/storage';
 import { useAuth } from '@/context/AuthContext';
-import { Trip } from '@/types/trip';
+import type { Trip } from '@/types/trip.types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -403,7 +403,7 @@ const CreateTrip = () => {
     
     try {
       const id = generateId('trip');
-      const now = Date.now();
+      const now = new Date().toISOString();
       
       // Handle file upload if cover photo exists
       let coverPhotoUrl = '';
@@ -412,14 +412,14 @@ const CreateTrip = () => {
         // For now, we'll just store the file name
         coverPhotoUrl = `uploads/${id}-${data.coverPhoto.name}`;
       }
-      
+
       const trip: Trip = {
         id,
         name: data.name,
         description: data.description || '',
         destination: data.destination,
-        startDate: data.startDate.toISOString(),
-        endDate: data.endDate.toISOString(),
+        startDate: data.startDate instanceof Date ? data.startDate.toISOString() : data.startDate,
+        endDate: data.endDate instanceof Date ? data.endDate.toISOString() : data.endDate,
         coverPhotoUrl,
         activities: {},
         itinerary: [],
@@ -429,6 +429,12 @@ const CreateTrip = () => {
         userId: user.id,
         isPublic: data.isPublic || false,
         tags: data.tags || [],
+        collaborators: [],
+        settings: {
+          currency: 'USD',
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          notifications: true,
+        },
       };
       
       await upsertTrip(trip);

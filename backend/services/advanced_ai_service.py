@@ -15,8 +15,7 @@ import requests
 try:
     from langchain_google_genai import ChatGoogleGenerativeAI
     GOOGLE_GENAI_AVAILABLE = True
-except Exception as e:
-    logger.warning(f"Google Generative AI not available: {e}")
+except Exception:
     ChatGoogleGenerativeAI = None
     GOOGLE_GENAI_AVAILABLE = False
 from langchain_core.prompts import ChatPromptTemplate
@@ -43,7 +42,8 @@ class AdvancedAIService:
                 logger.warning(f"Failed to initialize Google Generative AI in advanced service: {e}")
                 self.llm = None
         else:
-            logger.warning("Advanced AI service running without LLM - using fallback responses")
+            # Running in fallback mode is expected in dev without GEMINI_API_KEY
+            logger.info("Advanced AI service running without LLM - using fallback responses")
             self.llm = None
         
         # Travel alert sources (in production, use real APIs)

@@ -50,7 +50,10 @@ class ContextService:
         
         # Redis for caching active sessions
         self.redis_client = None
-        self._init_redis()
+
+    async def init(self):
+        """Public initializer to set up async resources (e.g., Redis)."""
+        await self._init_redis()
     
     async def _init_redis(self):
         """Initialize Redis connection"""
