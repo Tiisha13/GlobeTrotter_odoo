@@ -1,0 +1,217 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Brand colors (HSL) */
+    --background: 210 20% 98%; /* Off-White */
+    --foreground: 0 0% 18%;   /* Charcoal */
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 18%;
+
+    --primary: 196 100% 47%;   /* Sky Blue */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 14 100% 63%;  /* Sunset Orange */
+    --secondary-foreground: 0 0% 18%;
+
+    --muted: 210 22% 94%;
+    --muted-foreground: 215 16% 35%;
+
+    --accent: 145 63% 49%;     /* Emerald */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214 20% 88%;
+    --input: 214 20% 88%;
+    --ring: 196 100% 47%;
+
+    --radius: 0.75rem; /* 12px */
+
+    /* GlobeTrotter AI specific colors */
+    --electric-blue: 217 91% 60%; /* #2979FF */
+    --violet: 271 76% 53%; /* #8E24AA */
+    --gold: 45 100% 51%; /* #FFD54F */
+    --cream: 45 30% 97%; /* Light cream background */
+    
+    /* Chat colors */
+    --ai-message-bg: linear-gradient(135deg, hsl(var(--electric-blue)), hsl(var(--violet)));
+    --user-message-bg: 210 20% 96%; /* Soft pastel */
+    --input-glass: 0 0% 100% / 0.8; /* Glassmorphism */
+
+    /* Sidebar */
+    --sidebar-background: 210 20% 98%;
+    --sidebar-foreground: 0 0% 18%;
+    --sidebar-primary: 196 100% 47%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 22% 94%;
+    --sidebar-accent-foreground: 0 0% 18%;
+    --sidebar-border: 214 20% 88%;
+    --sidebar-ring: 196 100% 47%;
+
+    /* Premium tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+    --gradient-hero: linear-gradient(180deg, hsl(210 20% 98% / 0) 0%, hsl(210 20% 98% / 0.2) 40%, hsl(210 20% 98%) 100%);
+    --gradient-ai: linear-gradient(135deg, hsl(var(--electric-blue)), hsl(var(--violet)));
+    --shadow-elevated: 0 10px 30px -10px hsl(var(--primary) / 0.35);
+    --shadow-soft: 0 6px 20px -8px hsl(0 0% 0% / 0.15);
+    --shadow-glass: 0 8px 32px -8px hsl(0 0% 0% / 0.1);
+  }
+
+  .dark {
+    --background: 0 0% 18%;   /* Charcoal */
+    --foreground: 210 40% 98%; /* Off-White */
+
+    --card: 0 0% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 0 0% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 196 100% 55%;
+    --primary-foreground: 0 0% 8%;
+
+    --secondary: 14 100% 63%;
+    --secondary-foreground: 0 0% 8%;
+
+    --muted: 0 0% 24%;
+    --muted-foreground: 210 10% 80%;
+
+    --accent: 145 63% 49%;
+    --accent-foreground: 0 0% 8%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 0 0% 24%;
+    --input: 0 0% 24%;
+    --ring: 196 100% 55%;
+
+    --sidebar-background: 0 0% 12%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 196 100% 55%;
+    --sidebar-primary-foreground: 0 0% 8%;
+    --sidebar-accent: 0 0% 24%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 0 0% 24%;
+    --sidebar-ring: 196 100% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Reusable UI tokens and patterns */
+@layer components {
+  .page-title {
+    @apply font-poppins text-2xl md:text-3xl font-semibold tracking-tight;
+  }
+  .section {
+    @apply rounded-xl border border-border bg-card p-6 shadow-sm;
+  }
+  .elevated-card {
+    box-shadow: var(--shadow-soft);
+  }
+  .interactive-card {
+    @apply transition-transform duration-200 hover:-translate-y-0.5;
+    box-shadow: var(--shadow-soft);
+  }
+  .gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* GlobeTrotter AI specific styles */
+  .gradient-ai-text {
+    background: var(--gradient-ai);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .glassmorphism {
+    background: var(--input-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid hsl(0 0% 100% / 0.2);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .ai-message {
+    background: var(--ai-message-bg);
+    color: white;
+  }
+
+  .user-message {
+    background: hsl(var(--user-message-bg));
+    color: hsl(var(--foreground));
+  }
+
+  /* Animations */
+  @keyframes typing-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes drip-in {
+    0% {
+      opacity: 0;
+      transform: translateY(20px) scale(0.95);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes slide-in-right {
+    0% {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .typing-indicator {
+    animation: typing-pulse 1.5s ease-in-out infinite;
+  }
+
+  .drip-in {
+    animation: drip-in 0.6s ease-out forwards;
+  }
+
+  .slide-in-right {
+    animation: slide-in-right 0.5s ease-out forwards;
+  }
+
+  /* Travel background pattern */
+  .travel-bg {
+    background-image: 
+      radial-gradient(circle at 25px 25px, rgba(41, 121, 255, 0.1) 2px, transparent 0),
+      radial-gradient(circle at 75px 75px, rgba(142, 36, 170, 0.08) 2px, transparent 0);
+    background-size: 100px 100px, 150px 150px;
+    background-position: 0 0, 50px 50px;
+  }
+}

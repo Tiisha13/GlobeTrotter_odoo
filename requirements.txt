@@ -1,0 +1,45 @@
+# Core Dependencies
+langchain>=0.1.0
+langgraph>=0.0.1
+# langchain-community>=0.0.1  # Optional - commented out for now
+langchain-google-genai>=1.0.0
+# langchain-openai>=0.1.0  # Optional - commented out for now
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+python-dotenv>=1.0.0
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn>=0.23.0
+python-multipart>=0.0.6
+
+# Google Generative AI
+google-generativeai>=0.3.0
+
+# HTTP Client
+requests>=2.31.0
+httpx>=0.24.0
+
+# Database
+pymongo>=4.8.0
+redis>=5.0.4
+motor>=3.3.0
+
+# Search & APIs (Optional - commented out for now)
+# googlesearch-python>=1.2.3
+# openweathermapy>=0.6.6
+
+# Speech Recognition (Optional - commented out for now)
+# SpeechRecognition>=3.10.0
+# pyaudio>=0.2.11
+# pocketsphinx>=5.0.0
+
+# Utilities
+python-dateutil>=2.8.2
+pytz>=2023.3
+aiofiles>=23.0.0
+python-jose>=3.3.0
+
+# Development
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
