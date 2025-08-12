@@ -7,7 +7,7 @@ from backend.config import settings
 # Configure Gemini API
 def init_gemini():
     """Initialize the Gemini API with the API key from environment variables."""
-    api_key ="AIzaSyAnTMfio9NiDEj_MtEIjkA0LLonu0OhesA"
+    api_key ="AIzaSyAii5vu6WjFbMwu4t0gkM0THbryynkgUuk"
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable not set")
     genai.configure(api_key=api_key)

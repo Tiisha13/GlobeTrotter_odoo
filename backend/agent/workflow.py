@@ -446,6 +446,61 @@ class TravelPlanningWorkflow:
             logger.error(f"Error extracting trip details: {e}")
             return {"destination": "Tokyo", "budget_type": "moderate", "duration_days": 3}
     
+    def _generate_city_plan(self, destination: str, trip_details: Dict[str, Any], duration: int, total_budget: float) -> Dict[str, Any]:
+        """Create a simple city plan structure compatible with CityVisit/DayPlan models.
+        This returns a dict that Pydantic will coerce into the appropriate models.
+        """
+        try:
+            from datetime import date, timedelta
+            # Basic per-day budget split
+            per_day_budget = max(50.0, round(total_budget / max(1, duration), 2))
+            today = date.today()
+            days: List[Dict[str, Any]] = []
+            for i in range(duration):
+                day_date = today + timedelta(days=i)
+                days.append({
+                    "day_number": i + 1,
+                    "date": day_date,
+                    "activities": [
+                        {
+                            "activity_id": f"act-{i+1}-1",
+                            "time": "09:00",
+                            "name": f"Explore {destination} - Highlights",
+                            "description": f"Discover popular spots in {destination} based on your interests.",
+                            "estimated_cost": 25.0,
+                            "currency": "USD",
+                            "crowd_score": 70,
+                            "weather_summary": "clear",
+                            "place_coords": {"lat": 0.0, "lng": 0.0},
+                            "estimated": True
+                        }
+                    ],
+                    "daily_budget_total": per_day_budget
+                })
+            city_plan: Dict[str, Any] = {
+                "city_name": destination,
+                "country": trip_details.get("country", "Unknown"),
+                "arrival": {"date": str(today), "time": "09:00", "by": trip_details.get("transport_preference", "flight")},
+                "departure": {"date": str(today + timedelta(days=max(1, duration))), "time": "18:00", "by": trip_details.get("transport_preference", "flight")},
+                "hotels": [],
+                "days": days,
+                "transport_options": {}
+            }
+            return city_plan
+        except Exception as e:
+            logger.error(f"Error generating city plan: {e}")
+            # Fallback minimal shape
+            from datetime import date
+            return {
+                "city_name": destination,
+                "country": "Unknown",
+                "arrival": {"date": str(date.today()), "time": "09:00", "by": "flight"},
+                "departure": {"date": str(date.today()), "time": "18:00", "by": "flight"},
+                "hotels": [],
+                "days": [],
+                "transport_options": {}
+            }
+    
     async def _generate_intelligent_itinerary(self, trip_details: Dict[str, Any], original_message: str) -> TripPlan:
         """Generate intelligent, context-aware itinerary based on extracted details"""
         try:
@@ -480,16 +535,19 @@ class TravelPlanningWorkflow:
             base_budget = 200 if budget_type == "economical" else 400 if budget_type == "moderate" else 800
             total_budget = base_budget * duration * travelers
             
-            # Generate intelligent trip plan
+            # Generate intelligent trip plan with proper date types
+            from datetime import date, timedelta
+            start_dt = date.today()
+            end_dt = start_dt + timedelta(days=max(1, duration))
             trip_plan = TripPlan(
-                    trip_title=f"{budget_type.title()} {destination} Adventure" + (f" from {origin}" if origin else ""),
-                    total_days=duration,
-                    start_date="2024-12-01",
-                    end_date=f"2024-12-{1+duration:02d}",
-                    total_budget=total_budget,
-                    currency="USD",
-                    cities=[self._generate_city_plan(destination, trip_details, duration, total_budget)]
-                )
+                trip_title=f"{budget_type.title()} {destination} Adventure" + (f" from {origin}" if origin else ""),
+                total_days=duration,
+                start_date=start_dt,
+                end_date=end_dt,
+                total_budget=total_budget,
+                currency="USD",
+                cities=[self._generate_city_plan(destination, trip_details, duration, total_budget)]
+            )
             
             return trip_plan
             

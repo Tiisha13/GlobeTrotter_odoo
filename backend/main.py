@@ -1,4 +1,5 @@
-from fastapi import FastAPI, HTTPException, Request, Depends, status
+from fastapi import FastAPI, Depends, HTTPException, Request, Depends, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -142,31 +143,55 @@ async def get_conversation(conversation_id: Optional[str] = None) -> tuple[str, 
 async def chat(chat_request: ChatRequest):
     """Handle chat messages and return assistant responses using AI Travel Planning Agent."""
     try:
+        # Resolve conversation ID
+        conv_id = chat_request.conversation_id or f"session_{datetime.utcnow().timestamp()}"
+
+        # Persist user message to conversation history
+        if conv_repo is not None:
+            await conv_repo.append_message(conv_id, {
+                "role": "user",
+                "content": chat_request.message,
+                "ts": datetime.utcnow().isoformat(),
+            })
+
         # Process message through the AI Travel Planning Agent workflow
         response = await travel_agent.process_message(
             message=chat_request.message,
             user_id=chat_request.user_id,
-            session_id=chat_request.conversation_id or f"session_{datetime.utcnow().timestamp()}",
+            session_id=conv_id,
             user_preferences=chat_request.preferences or {}
         )
-        
-        # Update conversation history
+
+        # Persist assistant message and any trip plan into conversation state
+        if conv_repo is not None:
+            state = await conv_repo.append_message(conv_id, {
+                "role": "assistant",
+                "content": response.message,
+                "ts": datetime.utcnow().isoformat(),
+            })
+            # Attach trip plan to state if present
+            if getattr(response, "trip_plan", None):
+                # Ensure all dates are JSON-serializable for Mongo
+                state["trip_plan"] = jsonable_encoder(response.trip_plan)  # type: ignore[attr-defined]
+                await conv_repo.upsert(conv_id, state)
+
+        # Update conversation summary in context service (optional historical log)
         await context_service.update_conversation_history(
             user_id=chat_request.user_id,
-            session_id=chat_request.conversation_id or f"session_{datetime.utcnow().timestamp()}",
+            session_id=conv_id,
             message=chat_request.message,
             response=response.message,
-            trip_data=response.trip.model_dump() if response.trip else None
+            trip_data=(jsonable_encoder(response.trip_plan) if getattr(response, "trip_plan", None) else None)
         )
-        
+
         # Convert to ChatResponse format
         chat_response = ChatResponse(
-            conversation_id=chat_request.conversation_id or f"session_{datetime.utcnow().timestamp()}",
+            conversation_id=conv_id,
             message=response.message,
-            ui_actions=response.ui_actions.model_dump() if response.ui_actions else None,
-            trip_plan=response.trip.model_dump() if response.trip else None
+            ui_actions=(response.ui_actions.model_dump() if response.ui_actions else None),
+            trip_plan=(jsonable_encoder(response.trip_plan) if getattr(response, "trip_plan", None) else None)
         )
-        
+
         return chat_response
         
     except Exception as e:
